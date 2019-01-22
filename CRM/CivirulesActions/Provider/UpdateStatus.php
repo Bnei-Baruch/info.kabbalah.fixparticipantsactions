@@ -9,10 +9,28 @@ class CRM_CivirulesActions_Provider_UpdateStatus extends CRM_Civirules_Action {
    *
    * @param CRM_Civirules_TriggerData_TriggerData $triggerData
    * @access public
-   *
+   * 105610
    */
   public function processAction(CRM_Civirules_TriggerData_TriggerData $triggerData) {
-    CRM_Core_Error::debug_log_message("Update Participant Status: " . print_r($triggerData, true));
+    try {
+	    $triggerContribution = $triggerData->getEntityData('Contribution');
+	    $contribution_id = $triggerContribution['contribution_id'];
+	    $result = civicrm_api3('ParticipantPayment', 'get', [
+		  'sequential' => 1,
+		  'return' => ['participant_id'],
+		  'contribution_id' => $contribution_id,
+	    ]);
+	    foreach ($result['values'] as $participant) {
+		$participant_id = $participant['participant_id'];
+		$registered = civicrm_api3('Participant', 'create', [
+			'id' => $participant_id,
+			'status_id' => 'Registered',
+		]);
+	    }
+    } catch (Exception $e) {
+	    CRM_Core_Error::debug_log_message("Exception: " . $e->getMessage());
+    }
+
   }
 
   /**
